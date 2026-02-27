@@ -148,10 +148,6 @@ function AuthModal(props: {
               {loading ? <Cpu className="animate-spin" size={18} /> : null}
               {loading ? (mode === "signup" ? "Создаём…" : "Входим…") : mode === "signup" ? "Создать аккаунт" : "Войти"}
             </button>
-
-            <div className="text-xs text-slate-500 leading-relaxed">
-              Нужен Supabase Auth: настрой <b>SUPABASE_URL</b> и <b>SUPABASE_ANON_KEY</b>.
-            </div>
           </div>
         </div>
       </div>
@@ -277,10 +273,6 @@ function AddItemModal(props: {
             >
               Сохранить
             </button>
-
-            <div className="text-xs text-slate-500 leading-relaxed">
-              Сейчас данные хранятся локально в состоянии страницы. Дальше можно подключить Supabase DB и сохранять в профиль.
-            </div>
           </div>
         </div>
       </div>
@@ -370,6 +362,9 @@ export default function Home() {
     "activities" | "leadership" | "awards" | "projects" | "volunteering" | "work" | "certificates"
   >("projects");
   const [pfDraft, setPfDraft] = useState<{ [k: string]: string }>({});
+  const [pfLoaded, setPfLoaded] = useState(false);
+  const [pfLoading, setPfLoading] = useState(false);
+  const [pfErr, setPfErr] = useState<string | null>(null);
 
 
   const [modalUni, setModalUni] = useState<University | null>(null);
@@ -410,6 +405,78 @@ export default function Home() {
   useEffect(() => {
     setMobileOpen(false);
   }, [activeTab]);
+
+
+useEffect(() => {
+  if (!isAuthed) {
+    setPfLoaded(false);
+    return;
+  }
+  if (activeTab !== "pathfolio") return;
+  if (pfLoaded) return;
+
+  (async () => {
+    setPfLoading(true);
+    setPfErr(null);
+    try {
+      const pr = await fetch("/api/pathfolio/profile");
+      const pj = await pr.json();
+      if (!pr.ok || !pj?.ok) throw new Error(pj?.error || "Failed to load profile");
+
+      const ir = await fetch("/api/pathfolio/items");
+      const ij = await ir.json();
+      if (!ir.ok || !ij?.ok) throw new Error(ij?.error || "Failed to load items");
+
+      const profile = pj.profile || {};
+      const items = (ij.items || []) as any[];
+
+      const grouped: any = {
+        activities: [],
+        leadership: [],
+        awards: [],
+        projects: [],
+        volunteering: [],
+        work: [],
+        certificates: [],
+      };
+      for (const it of items) {
+        const cat = it.category;
+        if (grouped[cat]) grouped[cat].push(it);
+      }
+
+      setPf((prev: any) => ({
+        ...prev,
+        headline: profile.headline || prev.headline,
+        summary: profile.summary || prev.summary,
+        ...grouped,
+      }));
+
+      setPfLoaded(true);
+    } catch (e: any) {
+      setPfErr(String(e?.message || e));
+    } finally {
+      setPfLoading(false);
+    }
+  })();
+}, [isAuthed, activeTab, pfLoaded]);
+
+const saveProfile = async () => {
+  setPfErr(null);
+  setPfLoading(true);
+  try {
+    const r = await fetch("/api/pathfolio/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ headline: pf.headline, summary: pf.summary }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j?.ok) throw new Error(j?.error || "Failed to save profile");
+  } catch (e: any) {
+    setPfErr(String(e?.message || e));
+  } finally {
+    setPfLoading(false);
+  }
+};
 
   const handleAiSearch = async () => {
     if (!query.trim()) return;
@@ -663,26 +730,26 @@ export default function Home() {
                   {it.icon} <span className="font-medium">{it.label}</span>
                 </button>
               ))}
-              {isAuthed ? (
-                <button
-                  onClick={async () => {
-                    await fetch("/api/auth/logout", { method: "POST" });
-                    setIsAuthed(false);
-                    setUserEmail("");
-                    setMobileOpen(false);
-                  }}
-                  className="w-full mt-2 px-3 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 font-semibold hover:bg-slate-50 transition"
-                >
-                  {userEmail ? `Выйти (${userEmail})` : "Выйти"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => { setAuthErr(null); setAuthMode("login"); setAuthOpen(true); }}
-                  className="w-full mt-2 px-3 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-                >
-                  Войти
-                </button>
-              )}
+                          {isAuthed ? (
+                              <button
+                                  onClick={async () => {
+                                      await fetch("/api/auth/logout", { method: "POST" });
+                                      setIsAuthed(false);
+                                      setUserEmail("");
+                                      setMobileOpen(false);
+                                  }}
+                                  className="w-full mt-2 px-3 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 font-semibold hover:bg-slate-50 transition"
+                              >
+                                  {userEmail ? `Выйти (${userEmail})` : "Выйти"}
+                              </button>
+                          ) : (
+                              <button
+                                  onClick={() => { setAuthErr(null); setAuthMode("login"); setAuthOpen(true); }}
+                                  className="w-full mt-2 px-3 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                              >
+                                  Войти
+                              </button>
+                          )}
             </div>
           </div>
         )}
@@ -803,13 +870,22 @@ export default function Home() {
                         <div className="text-sm text-slate-600 mt-1 break-words">
                           {item.org || item.issuer || item.link || ""} {item.dates || item.date || item.hours || ""}
                         </div>
-                        {item.desc && <div className="text-sm text-slate-600 mt-2 whitespace-pre-line">{item.desc}</div>}
+                        {(item.description || item.desc) && <div className="text-sm text-slate-600 mt-2 whitespace-pre-line">{item.description || item.desc}</div>}
                         <button
-                          onClick={() => {
-                            const next = { ...pf } as any;
-                            next[key] = list.filter((_: any, i: number) => i !== idx);
-                            setPf(next);
-                          }}
+                          onClick={async () => {
+                                    const id = item.id;
+                                    const next = { ...pf } as any;
+                                    next[key] = list.filter((_: any, i: number) => i !== idx);
+                                    setPf(next);
+                                    if (!id) return;
+                                    try {
+                                      const r = await fetch(`/api/pathfolio/items?id=${encodeURIComponent(String(id))}`, { method: "DELETE" });
+                                      const j = await r.json();
+                                      if (!r.ok || !j?.ok) throw new Error(j?.error || "Failed to delete");
+                                    } catch (e: any) {
+                                      setPfErr(String(e?.message || e));
+                                    }
+                                  }}
                           className="mt-3 text-sm text-red-600 hover:underline"
                         >
                           Удалить
