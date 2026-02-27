@@ -689,7 +689,162 @@ export default function Home() {
       </header>
 
       {/* BODY */}
-      {isDataLoading ? (
+      
+{activeTab === "pathfolio" ? (
+  <section className="max-w-7xl mx-auto px-4 md:px-6 py-10 md:py-12">
+    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div className="max-w-3xl">
+        <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Pathfolio</h2>
+        <p className="text-slate-600 mt-2">
+          Mentis Pathfolio is LinkedIn for students: activities, leadership, awards, projects, volunteering, work experience — all structured and clean
+        </p>
+        <p className="text-slate-600 mt-2">
+          Pathfolio — динамичный интерактивный CV: сертификаты, материалы проектов и записи о волонтёрстве в одном месте. Это помогает проходить разные стандарты:
+          holistic review (US) и более специализированный фокус (UK).
+        </p>
+      </div>
+
+      <div className="flex gap-2">
+        {isAuthed ? (
+          <button
+            onClick={() => { setPfAddOpen(true); setPfDraft({}); }}
+            className="w-full md:w-auto px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+          >
+            + Добавить
+          </button>
+        ) : (
+          <button
+            onClick={() => { setAuthErr(null); setAuthMode("signup"); setAuthOpen(true); }}
+            className="w-full md:w-auto px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+          >
+            Зарегистрироваться
+          </button>
+        )}
+      </div>
+    </div>
+
+    {!isAuthed ? (
+      <div className="mt-6 bg-white border border-slate-200 rounded-2xl p-6">
+        <div className="text-slate-900 font-semibold">Pathfolio доступен после входа 🔒</div>
+        <div className="text-slate-600 mt-2">
+          Зарегистрируйся или войди, чтобы собрать портфолио и хранить материалы (сертификаты, ссылки, документы).
+        </div>
+        <div className="mt-4 flex flex-col md:flex-row gap-2">
+          <button
+            onClick={() => { setAuthErr(null); setAuthMode("login"); setAuthOpen(true); }}
+            className="px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 font-semibold hover:bg-slate-50 transition"
+          >
+            Войти
+          </button>
+          <button
+            onClick={() => { setAuthErr(null); setAuthMode("signup"); setAuthOpen(true); }}
+            className="px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+          >
+            Регистрация
+          </button>
+        </div>
+      </div>
+    ) : (
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-1 bg-white border border-slate-200 rounded-2xl p-5">
+          <div className="text-sm text-slate-500">Профиль</div>
+          <div className="mt-2 text-lg font-bold text-slate-900 break-words">{userEmail || "Student"}</div>
+
+          <div className="mt-5 space-y-2">
+            <label className="block text-sm font-medium text-slate-700">
+              Headline
+              <input
+                value={pf.headline}
+                onChange={(e) => setPf({ ...pf, headline: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-base outline-none focus:border-blue-300"
+              />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
+              Summary
+              <textarea
+                value={pf.summary}
+                onChange={(e) => setPf({ ...pf, summary: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-base outline-none focus:border-blue-300 h-28 resize-none"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 space-y-4">
+          {[
+            ["projects", "Projects"],
+            ["leadership", "Leadership"],
+            ["activities", "Activities"],
+            ["awards", "Awards"],
+            ["volunteering", "Volunteering"],
+            ["work", "Work experience"],
+            ["certificates", "Certificates"],
+          ].map(([key, title]) => {
+            const list = (pf as any)[key] as any[];
+            return (
+              <div key={key} className="bg-white border border-slate-200 rounded-2xl p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-bold text-slate-900">{title}</div>
+                  <button
+                    onClick={() => { setPfCategory(key as any); setPfDraft({}); setPfAddOpen(true); }}
+                    className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 font-semibold hover:bg-slate-50 transition text-sm"
+                  >
+                    + Добавить
+                  </button>
+                </div>
+
+                {list.length === 0 ? (
+                  <div className="mt-3 text-sm text-slate-500">Пока пусто. Нажми “Добавить”, чтобы заполнить.</div>
+                ) : (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {list.map((item: any, idx: number) => (
+                      <div key={idx} className="rounded-2xl border border-slate-200 p-4">
+                        <div className="font-semibold text-slate-900 break-words">{item.title || "Untitled"}</div>
+                        <div className="text-sm text-slate-600 mt-1 break-words">
+                          {item.org || item.issuer || item.link || ""} {item.dates || item.date || item.hours || ""}
+                        </div>
+                        {item.desc && <div className="text-sm text-slate-600 mt-2 whitespace-pre-line">{item.desc}</div>}
+                        <button
+                          onClick={() => {
+                            const next = { ...pf } as any;
+                            next[key] = list.filter((_: any, i: number) => i !== idx);
+                            setPf(next);
+                          }}
+                          className="mt-3 text-sm text-red-600 hover:underline"
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )}
+
+    <AddItemModal
+      open={pfAddOpen}
+      category={pfCategory}
+      setCategory={setPfCategory}
+      draft={pfDraft}
+      setDraft={setPfDraft}
+      onClose={() => setPfAddOpen(false)}
+      onSave={() => {
+        const title = (pfDraft.title || "").trim();
+        if (!title) return;
+        const next = { ...pf } as any;
+        next[pfCategory] = [...(next[pfCategory] || []), { ...pfDraft, title }];
+        setPf(next);
+        setPfAddOpen(false);
+        setPfDraft({});
+      }}
+    />
+  </section>
+) : (
+  isDataLoading ? (
         <div className="max-w-7xl mx-auto px-6 py-16 text-center text-slate-600">
           Загрузка данных из CSV…
         </div>
@@ -952,7 +1107,7 @@ export default function Home() {
             </section>
           )}
         </>
-      )}
+      ))}
 
       <UniModal />
       <AuthModal
