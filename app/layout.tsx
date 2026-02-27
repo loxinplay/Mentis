@@ -23,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" style={{ colorScheme: "light" }} className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-dvh overflow-x-hidden bg-white text-slate-900">
+    <html lang="ru" suppressHydrationWarning style={{ colorScheme: "light" }} className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body suppressHydrationWarning className="min-h-dvh overflow-x-hidden bg-white text-slate-900">
         {children}
       </body>
     </html>

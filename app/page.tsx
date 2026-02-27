@@ -159,6 +159,135 @@ function AuthModal(props: {
   );
 }
 
+
+function AddItemModal(props: {
+  open: boolean;
+  category:
+    | "activities"
+    | "leadership"
+    | "awards"
+    | "projects"
+    | "volunteering"
+    | "work"
+    | "certificates";
+  setCategory: (c: any) => void;
+  draft: { [k: string]: string };
+  setDraft: (d: any) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  const { open, category, setCategory, draft, setDraft, onClose, onSave } = props;
+  if (!open) return null;
+
+  const fieldsByCategory: Record<string, { key: string; label: string; placeholder: string }[]> = {
+    activities: [
+      { key: "title", label: "Активность", placeholder: "Напр. Debate club participant" },
+      { key: "org", label: "Организация", placeholder: "Школа / клуб / комьюнити" },
+      { key: "dates", label: "Период", placeholder: "2024–2026" },
+      { key: "desc", label: "Описание", placeholder: "1–2 предложения, что именно делал(а)" },
+    ],
+    leadership: [
+      { key: "title", label: "Роль", placeholder: "Напр. President of Student Council" },
+      { key: "org", label: "Организация", placeholder: "NIS / NGO / команда" },
+      { key: "dates", label: "Период", placeholder: "2025–2026" },
+      { key: "desc", label: "Impact", placeholder: "Цифры/результаты/масштаб" },
+    ],
+    awards: [
+      { key: "title", label: "Награда", placeholder: "Olympiad Silver" },
+      { key: "issuer", label: "Организатор", placeholder: "Daryn / NIS / ..." },
+      { key: "date", label: "Дата", placeholder: "Feb 2026" },
+      { key: "desc", label: "Детали", placeholder: "уровень, место, контекст" },
+    ],
+    projects: [
+      { key: "title", label: "Проект", placeholder: "Mentis / QazSign / ..." },
+      { key: "link", label: "Ссылка", placeholder: "GitHub / сайт / демо" },
+      { key: "dates", label: "Период", placeholder: "2025–present" },
+      { key: "desc", label: "Описание", placeholder: "что сделал(а), стек, результат" },
+    ],
+    volunteering: [
+      { key: "title", label: "Волонтёрство", placeholder: "Mentoring / events / ..." },
+      { key: "org", label: "Организация", placeholder: "Фонд / школа / NGO" },
+      { key: "dates", label: "Период", placeholder: "2024–2025" },
+      { key: "hours", label: "Часы", placeholder: "50h" },
+      { key: "desc", label: "Описание", placeholder: "что делал(а), impact" },
+    ],
+    work: [
+      { key: "title", label: "Должность", placeholder: "Intern / Tutor / ..." },
+      { key: "org", label: "Компания/организация", placeholder: "..." },
+      { key: "dates", label: "Период", placeholder: "Summer 2025" },
+      { key: "desc", label: "Описание", placeholder: "задачи, результат" },
+    ],
+    certificates: [
+      { key: "title", label: "Сертификат", placeholder: "IELTS / Coursera / ..." },
+      { key: "issuer", label: "Issuer", placeholder: "British Council / ..." },
+      { key: "date", label: "Дата", placeholder: "2026-02-01" },
+      { key: "link", label: "Ссылка/файл", placeholder: "Drive link / PDF" },
+    ],
+  };
+
+  const fields = fieldsByCategory[category] || [];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="h-dvh w-full flex items-center justify-center p-4">
+        <div
+          className="bg-white w-full max-w-lg rounded-2xl border border-slate-200 shadow-xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="font-bold text-slate-900">Добавить в Pathfolio</div>
+            <button onClick={onClose} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50" aria-label="Close">
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-3">
+            <label className="block text-sm font-medium text-slate-700">
+              Раздел
+              <select
+                value={category}
+                onChange={(e) => { setDraft({}); setCategory(e.target.value as any); }}
+                className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-base outline-none focus:border-blue-300 bg-white"
+              >
+                <option value="projects">Projects</option>
+                <option value="leadership">Leadership</option>
+                <option value="activities">Activities</option>
+                <option value="awards">Awards</option>
+                <option value="volunteering">Volunteering</option>
+                <option value="work">Work experience</option>
+                <option value="certificates">Certificates</option>
+              </select>
+            </label>
+
+            {fields.map((f) => (
+              <label key={f.key} className="block text-sm font-medium text-slate-700">
+                {f.label}
+                <input
+                  value={draft[f.key] || ""}
+                  onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-slate-200 p-3 text-base outline-none focus:border-blue-300"
+                  placeholder={f.placeholder}
+                />
+              </label>
+            ))}
+
+            <button
+              onClick={onSave}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+            >
+              Сохранить
+            </button>
+
+            <div className="text-xs text-slate-500 leading-relaxed">
+              Сейчас данные хранятся локально в состоянии страницы. Дальше можно подключить Supabase DB и сохранять в профиль.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface University {
   id: number;
   name: string;
@@ -198,7 +327,7 @@ const comparisonFields: { key: string; name: string; format: (v: any) => any }[]
   { key: "Financial Aid", name: "Фин. помощь", format: (v: string) => v || "—" },
 ];
 
-type TabKey = "home" | "tour" | "comparison" | "catalog";
+type TabKey = "home" | "tour" | "comparison" | "catalog" | "pathfolio";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabKey>("home");
@@ -222,6 +351,26 @@ export default function Home() {
   const [selectedUnis, setSelectedUnis] = useState<(University | null)[]>([null, null]);
 
   const [selectedTour, setSelectedTour] = useState<string | null>(STATIC_3D_TOURS[0]?.url || null);
+
+  const [pf, setPf] = useState({
+    headline: "LinkedIn for students — structured and clean",
+    summary:
+      "Pathfolio — динамичный интерактивный CV: сертификаты, проекты, волонтёрство и достижения в одном месте.",
+    activities: [] as { title: string; org?: string; dates?: string; desc?: string }[],
+    leadership: [] as { title: string; org?: string; dates?: string; desc?: string }[],
+    awards: [] as { title: string; issuer?: string; date?: string; desc?: string }[],
+    projects: [] as { title: string; link?: string; dates?: string; desc?: string }[],
+    volunteering: [] as { title: string; org?: string; dates?: string; hours?: string; desc?: string }[],
+    work: [] as { title: string; org?: string; dates?: string; desc?: string }[],
+    certificates: [] as { title: string; issuer?: string; date?: string; link?: string }[],
+  });
+
+  const [pfAddOpen, setPfAddOpen] = useState(false);
+  const [pfCategory, setPfCategory] = useState<
+    "activities" | "leadership" | "awards" | "projects" | "volunteering" | "work" | "certificates"
+  >("projects");
+  const [pfDraft, setPfDraft] = useState<{ [k: string]: string }>({});
+
 
   const [modalUni, setModalUni] = useState<University | null>(null);
   const [uniDetails, setUniDetails] = useState<any>(null);
@@ -439,6 +588,7 @@ export default function Home() {
         { key: "tour", label: "3D Кампус", icon: <Globe size={16} /> },
         { key: "comparison", label: "Сравнение", icon: <Scale size={16} /> },
         { key: "catalog", label: "Каталог", icon: <Calculator size={16} /> },
+        { key: "pathfolio", label: "Pathfolio", icon: <Globe size={16} /> },
       ] as const,
     []
   );
