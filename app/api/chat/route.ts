@@ -14,7 +14,16 @@ export async function POST(req: Request) {
   const client = new Mistral({ apiKey: apiKey });
   const { query } = await req.json();
 
-  const universities = loadUniversitiesFromCSV(); // ЧИТАЕМ CSV НАПРЯМУЮ
+  const uniUrl = new URL("/api/universities", req.url);
+const uniRes = await fetch(uniUrl);
+const universities = await uniRes.json();
+
+if (!uniRes.ok || !Array.isArray(universities) || universities.length === 0) {
+  return NextResponse.json(
+    { error: "Не удалось загрузить данные вузов для AI-анализа." },
+    { status: 500 }
+  );
+} // ЧИТАЕМ CSV НАПРЯМУЮ
   if (universities.length === 0) {
       return NextResponse.json({ error: "Не удалось загрузить данные из CSV для AI-анализа." }, { status: 500 });
   }
